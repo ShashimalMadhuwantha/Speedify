@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "519421115177",
+    "firebase_url": "https://speedify-1084e-default-rtdb.firebaseio.com",
+    "project_id": "speedify-1084e",
+    "storage_bucket": "speedify-1084e.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:519421115177:android:acb02bdfedb005a7105538",
+        "android_client_info": {
+          "package_name": "com.example.speedify"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCkIupnhD8iGI-SoIdcftSlOGJoA2jxCqY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

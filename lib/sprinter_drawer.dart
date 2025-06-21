@@ -67,6 +67,7 @@ class SprinterDrawer extends StatelessWidget {
             drawerItem('Dashboard', Icons.dashboard),
             drawerItem('Practice History', Icons.history),
             drawerItem('New Practice', Icons.add_circle_outline),
+            drawerItem('Practice Modes', Icons.settings), // <-- New item added here
             Spacer(),
             Divider(),
             ListTile(

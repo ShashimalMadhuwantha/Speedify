@@ -39,6 +39,8 @@ class SprinterNavBar extends StatelessWidget {
           navButton('Practice History'),
           SizedBox(width: 20),
           navButton('New Practice'),
+          SizedBox(width: 20),
+          navButton('Practice Modes'), // New nav item added here
           Spacer(),
           Text('User ID: $sprinterId',
               style: TextStyle(color: blueColor, fontWeight: FontWeight.w600)),

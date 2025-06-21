@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'live_practice_page.dart'; // Import the live display page
 
 class PracticePage extends StatefulWidget {
   final String userId;
@@ -32,7 +33,6 @@ class _PracticePageState extends State<PracticePage> {
       double lapDistance = double.parse(_lapDistanceController.text.trim());
       int lapCount = int.parse(_lapCountController.text.trim());
 
-      // Create the practice document
       DocumentReference practiceRef = await _firestore
           .collection('users')
           .doc(widget.userId)
@@ -43,19 +43,25 @@ class _PracticePageState extends State<PracticePage> {
         'timestamp': FieldValue.serverTimestamp(),
       });
 
-      // Create subdocuments for each lap
       for (int i = 1; i <= lapCount; i++) {
         await practiceRef.collection('laps').doc('lap_$i').set({
           'lapNumber': i,
-          'time': 0,     // placeholder, update later
-          'speed': 0.0,  // placeholder, update later
+          'time': 0,
+          'speed': 0.0,
         });
       }
 
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text('Practice saved successfully!'),
-        backgroundColor: Colors.green,
-      ));
+      // Navigate to live practice page
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => LivePracticePage(
+            userId: widget.userId,
+            practiceId: practiceRef.id,
+              lapCount: lapCount,
+          ),
+        ),
+      );
 
       _lapDistanceController.clear();
       _lapCountController.clear();

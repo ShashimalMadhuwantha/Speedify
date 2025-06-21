@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'sprinter_dashboard.dart';
 
 class SprinterLogin extends StatefulWidget {
   @override
@@ -35,12 +36,20 @@ class _SprinterLoginState extends State<SprinterLogin> {
           _error = 'Invalid email or password';
         });
       } else {
-        // Login success
+        final sprinterDoc = querySnapshot.docs.first;
+        final sprinterId = sprinterDoc.id;
+
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text("Login successful!"),
           backgroundColor: Colors.green,
         ));
-        // Navigate to your app's home or dashboard here
+
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => SprinterDashboard(sprinterId: sprinterId),
+          ),
+        );
       }
     } catch (e) {
       setState(() {

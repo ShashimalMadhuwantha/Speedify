@@ -17,9 +17,11 @@ class SprinterDashboard extends StatefulWidget {
 
 class _SprinterDashboardState extends State<SprinterDashboard> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
   late Future<DocumentSnapshot> _sprinterFuture;
-  String _selectedPage = 'Dashboard';
   late Future<Map<String, dynamic>> _practiceSummaryFuture;
+
+  String _selectedPage = 'Dashboard';
 
   @override
   void initState() {
@@ -28,6 +30,7 @@ class _SprinterDashboardState extends State<SprinterDashboard> {
     _practiceSummaryFuture = _fetchPracticeSummary();
   }
 
+  // Fetches practice summary stats from Firestore
   Future<Map<String, dynamic>> _fetchPracticeSummary() async {
     QuerySnapshot practiceSnapshot = await _firestore
         .collection('users')
@@ -42,7 +45,8 @@ class _SprinterDashboardState extends State<SprinterDashboard> {
 
     for (var doc in practiceSnapshot.docs) {
       var data = doc.data() as Map<String, dynamic>;
-      int lapCount = data['lapCount'] ?? 0;
+
+      int lapCount = (data['lapCount'] ?? 0).toInt();
       double lapDistance = (data['lapDistance'] ?? 0).toDouble();
 
       totalLaps += lapCount;
@@ -77,11 +81,11 @@ class _SprinterDashboardState extends State<SprinterDashboard> {
 
   @override
   Widget build(BuildContext context) {
-    final blueColor = Color(0xFF1565C0);
+    final blueColor = const Color(0xFF1565C0);
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Speedify'),
+        title: const Text('Speedify', style: TextStyle(fontWeight: FontWeight.bold)),
         backgroundColor: blueColor,
         elevation: 4,
       ),
@@ -97,10 +101,10 @@ class _SprinterDashboardState extends State<SprinterDashboard> {
             return Center(child: CircularProgressIndicator(color: blueColor));
           }
           if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}', style: TextStyle(color: Colors.red)));
+            return Center(child: Text('Error: ${snapshot.error}', style: const TextStyle(color: Colors.red)));
           }
           if (!snapshot.hasData || !snapshot.data!.exists) {
-            return Center(child: Text('Sprinter not found.'));
+            return const Center(child: Text('Sprinter not found.'));
           }
 
           final data = snapshot.data!.data() as Map<String, dynamic>;
@@ -114,7 +118,9 @@ class _SprinterDashboardState extends State<SprinterDashboard> {
                     return Center(child: CircularProgressIndicator(color: blueColor));
                   }
                   if (summarySnapshot.hasError) {
-                    return Center(child: Text('Error loading practice summary: ${summarySnapshot.error}', style: TextStyle(color: Colors.red)));
+                    return Center(
+                        child: Text('Error loading summary: ${summarySnapshot.error}',
+                            style: const TextStyle(color: Colors.red)));
                   }
                   final summary = summarySnapshot.data ?? {};
                   return _buildDashboard(data, summary, blueColor);
@@ -127,7 +133,7 @@ class _SprinterDashboardState extends State<SprinterDashboard> {
             case 'Practice Modes':
               return PracticeModesPage();
             default:
-              return Center(child: Text('Page not found'));
+              return const Center(child: Text('Page not found'));
           }
         },
       ),
@@ -143,68 +149,81 @@ class _SprinterDashboardState extends State<SprinterDashboard> {
     return Container(
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [blueColor.withOpacity(0.1), Colors.white],
+          colors: [blueColor.withOpacity(0.08), Colors.white],
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
         ),
       ),
       child: SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            // Hero image with sprinting athlete
             ClipRRect(
-              borderRadius: BorderRadius.vertical(bottom: Radius.circular(24)),
+              borderRadius: BorderRadius.circular(20),
               child: Image.network(
-                'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?auto=format&fit=crop&w=1050&q=80',
-                height: 220,
+                'https://images.unsplash.com/photo-1605296867304-46d5465a13f1?auto=format&fit=crop&w=1050&q=80',
+                height: 200,
                 width: double.infinity,
                 fit: BoxFit.cover,
+                loadingBuilder: (context, child, progress) {
+                  if (progress == null) return child;
+                  return SizedBox(
+                    height: 200,
+                    child: Center(
+                      child: CircularProgressIndicator(
+                        value: progress.expectedTotalBytes != null
+                            ? progress.cumulativeBytesLoaded / progress.expectedTotalBytes!
+                            : null,
+                        color: blueColor,
+                      ),
+                    ),
+                  );
+                },
               ),
             ),
-            SizedBox(height: 20),
+            const SizedBox(height: 20),
             CircleAvatar(
-              radius: 52,
-              backgroundImage: NetworkImage(
-                'https://cdn-icons-png.flaticon.com/512/2922/2922510.png',
-              ),
+              radius: 50,
+              backgroundImage: const NetworkImage('https://cdn-icons-png.flaticon.com/512/9131/9131529.png'),
               backgroundColor: blueColor.withOpacity(0.1),
             ),
-            SizedBox(height: 16),
+            const SizedBox(height: 12),
             Text(
               data['name'] ?? 'No Name',
-              style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: blueColor),
+              style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: blueColor),
             ),
-            SizedBox(height: 6),
+            const SizedBox(height: 4),
             Text(
               data['email'] ?? 'No Email',
-              style: TextStyle(fontSize: 16, color: blueColor.withOpacity(0.7)),
+              style: TextStyle(fontSize: 16, color: blueColor.withOpacity(0.6)),
             ),
-            SizedBox(height: 24),
+            const SizedBox(height: 28),
             _buildSummaryCard(totalSessions, totalLaps, averageLapDistance, latestPracticeDate, blueColor),
-            SizedBox(height: 32),
+            const SizedBox(height: 24),
             Text(
               'Ready to break your limits today?',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500, color: blueColor),
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.w500, color: blueColor),
             ),
-            SizedBox(height: 20),
+            const SizedBox(height: 18),
             Wrap(
               spacing: 16,
               runSpacing: 12,
               alignment: WrapAlignment.center,
               children: [
-                _buildActionButton(Icons.play_arrow, 'Start Practice', () {
+                _buildActionButton(Icons.play_arrow_rounded, 'Start Practice', () {
                   setState(() => _selectedPage = 'New Practice');
                 }, blueColor),
-                _buildActionButton(Icons.history, 'Practice History', () {
+                _buildActionButton(Icons.history_edu_rounded, 'Practice History', () {
                   setState(() => _selectedPage = 'Practice History');
                 }, blueColor.withOpacity(0.9)),
-                _buildActionButton(Icons.speed, 'Practice Modes', () {
+                _buildActionButton(Icons.speed_rounded, 'Practice Modes', () {
                   setState(() => _selectedPage = 'Practice Modes');
                 }, blueColor.withOpacity(0.8)),
               ],
             ),
-            SizedBox(height: 40),
+            const SizedBox(height: 36),
           ],
         ),
       ),
@@ -212,70 +231,66 @@ class _SprinterDashboardState extends State<SprinterDashboard> {
   }
 
   Widget _buildSummaryCard(int totalSessions, int totalLaps, double avgLapDistance, DateTime? latestPracticeDate, Color blueColor) {
-    final TextStyle labelStyle = TextStyle(color: blueColor.withOpacity(0.7), fontSize: 14);
-    final TextStyle valueStyle = TextStyle(color: blueColor, fontSize: 20, fontWeight: FontWeight.w600);
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Card(
-        elevation: 6,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 18),
-          child: Column(
-            children: [
-              Text('Practice Summary', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: blueColor)),
-              SizedBox(height: 24),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: [
-                  _buildSummaryItem(Icons.fitness_center, 'Sessions', totalSessions.toString(), blueColor),
-                  _buildSummaryItem(Icons.directions_run, 'Laps', totalLaps.toString(), blueColor),
-                ],
-              ),
-              SizedBox(height: 20),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: [
-                  _buildSummaryItem(Icons.timeline, 'Avg Lap', '${avgLapDistance.toStringAsFixed(2)} m', blueColor),
-                  _buildSummaryItem(Icons.calendar_today, 'Last Practice',
-                      latestPracticeDate != null
-                          ? '${latestPracticeDate.day}/${latestPracticeDate.month}/${latestPracticeDate.year}'
-                          : 'N/A',
-                      blueColor),
-                ],
-              ),
-            ],
-          ),
+    return Card(
+      elevation: 8,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      margin: const EdgeInsets.symmetric(horizontal: 4),
+      child: Padding(
+        padding: const EdgeInsets.all(22),
+        child: Column(
+          children: [
+            Text('Practice Summary',
+                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: blueColor)),
+            const SizedBox(height: 20),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _buildSummaryItem(Icons.fitness_center, 'Sessions', totalSessions.toString(), blueColor),
+                _buildSummaryItem(Icons.directions_run, 'Laps', totalLaps.toString(), blueColor),
+              ],
+            ),
+            const SizedBox(height: 18),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _buildSummaryItem(Icons.timeline, 'Avg Lap', '${avgLapDistance.toStringAsFixed(2)} m', blueColor),
+                _buildSummaryItem(Icons.calendar_today, 'Latest', latestPracticeDate != null
+                    ? '${latestPracticeDate.day}/${latestPracticeDate.month}/${latestPracticeDate.year}'
+                    : 'N/A', blueColor),
+              ],
+            ),
+          ],
         ),
       ),
     );
   }
 
+  // Summary items with black text
   Widget _buildSummaryItem(IconData icon, String label, String value, Color color) {
-    return Column(
-      children: [
-        Icon(icon, size: 32, color: color),
-        SizedBox(height: 8),
-        Text(value, style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: color)),
-        SizedBox(height: 4),
-        Text(label, style: TextStyle(fontSize: 14, color: color.withOpacity(0.7))),
-      ],
-    );
-  }
+  return Column(
+    children: [
+      Icon(icon, size: 36, color: Colors.black),
+      const SizedBox(height: 6),
+      Text(label, style: const TextStyle(fontSize: 16, color: Colors.black87)), // no const before Text
+      const SizedBox(height: 4),
+      Text(value, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black)),
+    ],
+  );
+}
 
-  Widget _buildActionButton(IconData icon, String label, VoidCallback onTap, Color bgColor) {
+
+  Widget _buildActionButton(IconData icon, String label, VoidCallback onPressed, Color color) {
     return ElevatedButton.icon(
-      onPressed: onTap,
-      icon: Icon(icon, size: 20),
-      label: Text(label),
       style: ElevatedButton.styleFrom(
-        backgroundColor: bgColor,
-        padding: EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-        textStyle: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        elevation: 6,
+        backgroundColor: color,
+        elevation: 5,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+        textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
       ),
+      icon: Icon(icon, size: 24, color: Colors.white),
+      label: Text(label, style: const TextStyle(color: Colors.white)),
+      onPressed: onPressed,
     );
   }
 }

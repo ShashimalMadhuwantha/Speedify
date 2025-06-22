@@ -56,7 +56,7 @@ class _PracticePageState extends State<PracticePage> {
           builder: (context) => LivePracticePage(
             userId: widget.userId,
             practiceId: practiceRef.id,
-            lapCount: lapCount,
+            lapCount: lapCount, // Pass lapDistance here
           ),
         ),
       );

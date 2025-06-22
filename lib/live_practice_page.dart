@@ -27,6 +27,9 @@ class _LivePracticePageState extends State<LivePracticePage> {
   bool _isDirectionReversed = false;
   String _sessionState = "not_over"; // Read from realtime DB
 
+  // Example lapDistance stored separately in practice doc, update this as needed
+  double _selectedLapDistance = 1000.0; // Default or from your UI
+
   @override
   void initState() {
     super.initState();
@@ -51,28 +54,60 @@ class _LivePracticePageState extends State<LivePracticePage> {
     });
   }
 
+  Future<void> _updatePracticeDocLapDistance() async {
+    final firestore = FirebaseFirestore.instance;
+
+    try {
+      // Update lapDistance only on the practice document (not laps)
+      await firestore
+          .collection('users')
+          .doc(widget.userId)
+          .collection('practices')
+          .doc(widget.practiceId)
+          .update({
+        'lapDistance': _selectedLapDistance,
+        'timestamp': FieldValue.serverTimestamp(),
+      });
+      print("Practice lapDistance updated.");
+    } catch (e) {
+      print("Failed to update practice lapDistance: $e");
+    }
+  }
+
   Future<void> _updateLapsInFirestore(Map<int, Map<String, dynamic>> lapsData) async {
     final firestore = FirebaseFirestore.instance;
-    final WriteBatch batch = firestore.batch();
 
-    final lapsCollection = firestore
+    final practiceDocRef = firestore
         .collection('users')
         .doc(widget.userId)
         .collection('practices')
-        .doc(widget.practiceId)
-        .collection('laps');
+        .doc(widget.practiceId);
 
-    for (var entry in lapsData.entries) {
-      final lapDoc = lapsCollection.doc('lap_${entry.key}');
-      batch.set(lapDoc, {
-        'time': entry.value['time'],
-        'speed': entry.value['speed'],
-      });
+    final lapsCollection = practiceDocRef.collection('laps');
+
+    WriteBatch batch = firestore.batch();
+
+    for (int i = 1; i <= widget.lapCount; i++) {
+      final lapData = lapsData[i];
+
+      if (lapData != null) {
+        final lapDocRef = lapsCollection.doc('lap_$i');
+
+        // Only update time and speed fields; do not overwrite the whole doc
+        batch.update(lapDocRef, {
+          'time': lapData['time'] ?? 0,
+          'speed': lapData['speed'] ?? 0.0,
+        });
+      }
     }
 
     try {
       await batch.commit();
-      print("Laps updated in Firestore successfully.");
+
+      // Optionally update lapDistance in parent doc too (if needed)
+      await _updatePracticeDocLapDistance();
+
+      print("All lap times and speeds updated in Firestore, lapDistance preserved.");
     } catch (e) {
       print("Failed to update laps in Firestore: $e");
     }
@@ -161,7 +196,6 @@ class _LivePracticePageState extends State<LivePracticePage> {
                     lapsMap = Map<String, dynamic>.from(snapshot.data!.snapshot.value as Map);
                   }
 
-                  // Update session status from DB
                   final sessionStatusRaw = lapsMap['status']?.toString();
                   if (sessionStatusRaw != null && sessionStatusRaw != _sessionState) {
                     _sessionState = sessionStatusRaw;
@@ -187,7 +221,6 @@ class _LivePracticePageState extends State<LivePracticePage> {
                       _hasUpdatedFirestore = true;
 
                       _updateLapsInFirestore(structuredLaps).then((_) async {
-                        // Clear lap data but keep 'direction' and 'status'
                         for (var key in lapsMap.keys) {
                           if (key != 'direction' && key != 'status') {
                             await lapsRef.child(key).remove();
@@ -203,7 +236,6 @@ class _LivePracticePageState extends State<LivePracticePage> {
                     currentStatus = "Running (Lap $lastAvailableLap)";
                     _hasUpdatedFirestore = false;
                   } else if (lastAvailableLap >= widget.lapCount) {
-                    // Trigger session over update
                     currentStatus = "Completing...";
                     lapsRef.child('status').set('over');
                   }
@@ -218,7 +250,6 @@ class _LivePracticePageState extends State<LivePracticePage> {
                     });
                   }
 
-                  // Build lap cards
                   List<Widget> lapCards = [];
                   for (int i = 1; i <= widget.lapCount; i++) {
                     final lap = structuredLaps[i];
@@ -241,7 +272,7 @@ class _LivePracticePageState extends State<LivePracticePage> {
                               ? Text('Time: ${lap['time']} sec')
                               : const Text('Waiting for data...'),
                           subtitle: lap != null
-                              ? Text('Speed: ${lap['speed']} m/s')
+                              ? Text('Speed: ${lap['speed']} m/s\nDistance: ${_selectedLapDistance} m')
                               : const Text('Lap not yet completed'),
                           trailing: isCurrentLap
                               ? Icon(Icons.play_arrow, color: blueColor)

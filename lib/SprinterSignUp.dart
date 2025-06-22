@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'login.dart';
 
 class SprinterSignUp extends StatefulWidget {
   @override
@@ -33,12 +34,20 @@ class _SprinterSignUpState extends State<SprinterSignUp> {
         'createdAt': Timestamp.now(),
       });
 
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text("Sprinter added successfully!"),
-        backgroundColor: Colors.green,
-      ));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Sprinter added successfully!"),
+          backgroundColor: Colors.green,
+        ),
+      );
 
       _formKey.currentState?.reset();
+
+      // Redirect to login page
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => SprinterLogin()),
+      );
     } catch (e) {
       setState(() {
         _error = 'Error: ${e.toString()}';
@@ -79,6 +88,14 @@ class _SprinterSignUpState extends State<SprinterSignUp> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
+                  // 🌐 Signup Image
+                  Image.network(
+                    'https://cdn-icons-png.flaticon.com/512/1157/1157109.png',
+                    height: 120,
+                  ),
+                  SizedBox(height: 20),
+
+                  // 📝 App Title
                   Text(
                     'Speedify',
                     style: TextStyle(
@@ -89,6 +106,8 @@ class _SprinterSignUpState extends State<SprinterSignUp> {
                     ),
                   ),
                   SizedBox(height: 10),
+
+                  // ✨ Subtitle
                   Text(
                     'Create your Sprinter account',
                     style: TextStyle(
@@ -110,19 +129,22 @@ class _SprinterSignUpState extends State<SprinterSignUp> {
                       ),
                     ),
 
+                  // 🔤 Form fields
                   _buildTextField(
                     controller: _nameController,
                     label: 'Full Name',
                     validatorMsg: 'Enter your name',
                   ),
                   SizedBox(height: 15),
+
                   _buildTextField(
                     controller: _emailController,
                     label: 'Email',
                     keyboardType: TextInputType.emailAddress,
-                    validatorMsg: 'Enter your email',
+                    validatorMsg: 'Enter a valid email',
                   ),
                   SizedBox(height: 15),
+
                   _buildTextField(
                     controller: _phoneController,
                     label: 'Phone Number',
@@ -130,44 +152,45 @@ class _SprinterSignUpState extends State<SprinterSignUp> {
                     validatorMsg: 'Enter your phone number',
                   ),
                   SizedBox(height: 15),
+
                   _buildTextField(
                     controller: _passwordController,
                     label: 'Password',
                     obscureText: true,
-                    validatorMsg: 'Minimum 6 characters',
+                    validatorMsg: 'Minimum 6 characters required',
                     minLength: 6,
                   ),
                   SizedBox(height: 30),
 
                   _loading
                       ? CircularProgressIndicator(
-                          valueColor: AlwaysStoppedAnimation<Color>(blueColor),
-                        )
+                        valueColor: AlwaysStoppedAnimation<Color>(blueColor),
+                      )
                       : SizedBox(
-                          width: double.infinity,
-                          height: 50,
-                          child: ElevatedButton(
-                            onPressed: () {
-                              if (_formKey.currentState!.validate()) {
-                                _addSprinterData();
-                              }
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: blueColor,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(15),
-                              ),
-                              elevation: 5,
+                        width: double.infinity,
+                        height: 50,
+                        child: ElevatedButton(
+                          onPressed: () {
+                            if (_formKey.currentState!.validate()) {
+                              _addSprinterData();
+                            }
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: blueColor,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(15),
                             ),
-                            child: Text(
-                              'Sign Up',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                              ),
+                            elevation: 5,
+                          ),
+                          child: Text(
+                            'Sign Up',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
                             ),
                           ),
                         ),
+                      ),
                 ],
               ),
             ),
@@ -177,6 +200,7 @@ class _SprinterSignUpState extends State<SprinterSignUp> {
     );
   }
 
+  // 🔧 Custom TextField Builder
   Widget _buildTextField({
     required TextEditingController controller,
     required String label,

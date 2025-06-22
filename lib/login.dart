@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'sprinter_dashboard.dart';
+import 'SprinterSignUp.dart';
 
 class SprinterLogin extends StatefulWidget {
   @override
@@ -69,105 +70,155 @@ class _SprinterLoginState extends State<SprinterLogin> {
     final white = Colors.white;
 
     return Scaffold(
-      backgroundColor: lightBlue,
-      body: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 40),
-          child: Container(
-            padding: const EdgeInsets.all(30),
-            decoration: BoxDecoration(
-              color: white,
-              borderRadius: BorderRadius.circular(25),
-              boxShadow: [
-                BoxShadow(
-                  color: blueColor.withOpacity(0.2),
-                  blurRadius: 15,
-                  offset: Offset(0, 10),
-                ),
-              ],
-            ),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    'Speedify',
-                    style: TextStyle(
-                      fontSize: 36,
-                      fontWeight: FontWeight.bold,
-                      color: blueColor,
-                      letterSpacing: 1.5,
-                    ),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Color(0xFF1565C0), Color(0xFF42A5F5)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 40),
+            child: Container(
+              padding: const EdgeInsets.all(30),
+              decoration: BoxDecoration(
+                color: white,
+                borderRadius: BorderRadius.circular(25),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 25,
+                    offset: Offset(0, 10),
                   ),
-                  SizedBox(height: 10),
-                  Text(
-                    'Login to your account',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: blueColor.withOpacity(0.7),
-                    ),
-                  ),
-                  SizedBox(height: 30),
-
-                  if (_error.isNotEmpty)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
-                      child: Text(
-                        _error,
-                        style: TextStyle(
-                          color: Colors.red,
-                          fontWeight: FontWeight.w600,
+                ],
+              ),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Vector Illustration - replace with your own SVG or image asset
+                    Container(
+                        height: 150,
+                        child: Image.network(
+                          'https://cdn-icons-png.flaticon.com/512/295/295128.png',
+                          fit: BoxFit.contain,
                         ),
                       ),
+                    Text(
+                      'Speedify',
+                      style: TextStyle(
+                        fontSize: 40,
+                        fontWeight: FontWeight.bold,
+                        color: blueColor,
+                        letterSpacing: 2,
+                      ),
                     ),
+                    SizedBox(height: 5),
+                    Text(
+                      'Login to your account',
+                      style: TextStyle(
+                        fontSize: 18,
+                        color: blueColor.withOpacity(0.8),
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                    SizedBox(height: 30),
 
-                  _buildTextField(
-                    controller: _emailController,
-                    label: 'Email',
-                    keyboardType: TextInputType.emailAddress,
-                    validatorMsg: 'Enter your email',
-                  ),
-                  SizedBox(height: 20),
-                  _buildTextField(
-                    controller: _passwordController,
-                    label: 'Password',
-                    obscureText: true,
-                    validatorMsg: 'Enter your password',
-                    minLength: 6,
-                  ),
-                  SizedBox(height: 30),
+                    if (_error.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 15),
+                        child: Text(
+                          _error,
+                          style: TextStyle(
+                            color: Colors.redAccent,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ),
 
-                  _loading
-                      ? CircularProgressIndicator(
-                          valueColor: AlwaysStoppedAnimation<Color>(blueColor),
-                        )
-                      : SizedBox(
-                          width: double.infinity,
-                          height: 50,
-                          child: ElevatedButton(
-                            onPressed: () {
-                              if (_formKey.currentState!.validate()) {
-                                _loginSprinter();
-                              }
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: blueColor,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(15),
+                    _buildTextField(
+                      controller: _emailController,
+                      label: 'Email',
+                      keyboardType: TextInputType.emailAddress,
+                      validatorMsg: 'Please enter your email',
+                    ),
+                    SizedBox(height: 20),
+                    _buildTextField(
+                      controller: _passwordController,
+                      label: 'Password',
+                      obscureText: true,
+                      validatorMsg: 'Please enter your password',
+                      minLength: 6,
+                    ),
+                    SizedBox(height: 30),
+
+                    _loading
+                        ? CircularProgressIndicator(
+                            valueColor: AlwaysStoppedAnimation<Color>(blueColor),
+                          )
+                        : SizedBox(
+                            width: double.infinity,
+                            height: 50,
+                            child: ElevatedButton(
+                              onPressed: () {
+                                if (_formKey.currentState!.validate()) {
+                                  _loginSprinter();
+                                }
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: blueColor,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(18),
+                                ),
+                                elevation: 7,
+                                shadowColor: blueColor.withOpacity(0.5),
                               ),
-                              elevation: 5,
-                            ),
-                            child: Text(
-                              'Login',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
+                              child: Text(
+                                'Login',
+                                style: TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: 1.2,
+                                ),
                               ),
                             ),
                           ),
+                    SizedBox(height: 25),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          "Don't have an account? ",
+                          style: TextStyle(
+                            color: blueColor.withOpacity(0.8),
+                            fontSize: 15,
+                          ),
                         ),
-                ],
+                        GestureDetector(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (context) => SprinterSignUp()),
+                            );
+                          },
+                          child: Text(
+                            'Sign Up',
+                            style: TextStyle(
+                              color: blueColor,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                              decoration: TextDecoration.underline,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -199,16 +250,22 @@ class _SprinterLoginState extends State<SprinterLogin> {
       },
       decoration: InputDecoration(
         labelText: label,
-        labelStyle: TextStyle(color: Colors.blue[900]),
+        labelStyle: TextStyle(
+          color: Color(0xFF1565C0),
+          fontWeight: FontWeight.w600,
+          letterSpacing: 0.5,
+        ),
+        filled: true,
+        fillColor: Colors.blue.shade50,
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(15),
-          borderSide: BorderSide(color: Colors.blue.shade300),
+          borderSide: BorderSide(color: Colors.blue.shade100),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(15),
-          borderSide: BorderSide(color: Colors.blue.shade700, width: 2),
+          borderSide: BorderSide(color: Color(0xFF1565C0), width: 2),
         ),
-        contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+        contentPadding: EdgeInsets.symmetric(horizontal: 22, vertical: 18),
       ),
     );
   }

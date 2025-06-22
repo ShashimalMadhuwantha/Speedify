@@ -23,17 +23,16 @@ class _LivePracticePageState extends State<LivePracticePage> {
 
   late DatabaseReference lapsRef;
   String practiceStatus = "Not started";
-  bool _hasUpdatedFirestore = false;  // flag to avoid repeated updates
-
-  // New: switch state for direction
+  bool _hasUpdatedFirestore = false;
   bool _isDirectionReversed = false;
+  String _sessionState = "not_over"; // Read from realtime DB
 
   @override
   void initState() {
     super.initState();
     lapsRef = FirebaseDatabase.instance.ref("laps");
 
-    // Listen once for initial direction value in realtime DB and set switch state
+    // Read direction and session status
     lapsRef.child('direction').get().then((snapshot) {
       if (snapshot.exists) {
         final val = snapshot.value.toString();
@@ -42,11 +41,18 @@ class _LivePracticePageState extends State<LivePracticePage> {
         });
       }
     });
+
+    lapsRef.child('status').get().then((snapshot) {
+      if (snapshot.exists) {
+        setState(() {
+          _sessionState = snapshot.value.toString();
+        });
+      }
+    });
   }
 
   Future<void> _updateLapsInFirestore(Map<int, Map<String, dynamic>> lapsData) async {
     final firestore = FirebaseFirestore.instance;
-
     final WriteBatch batch = firestore.batch();
 
     final lapsCollection = firestore
@@ -58,7 +64,7 @@ class _LivePracticePageState extends State<LivePracticePage> {
 
     for (var entry in lapsData.entries) {
       final lapDoc = lapsCollection.doc('lap_${entry.key}');
-      batch.update(lapDoc, {
+      batch.set(lapDoc, {
         'time': entry.value['time'],
         'speed': entry.value['speed'],
       });
@@ -72,13 +78,37 @@ class _LivePracticePageState extends State<LivePracticePage> {
     }
   }
 
-  // New: Function to update direction in Realtime Database
   Future<void> _updateDirectionInRealtimeDB(bool reversed) async {
     try {
       await lapsRef.child('direction').set(reversed ? "reversed" : "not reversed");
-      print("Direction updated to ${reversed ? "reversed" : "not reversed"} in Realtime DB.");
+      print("Direction updated to ${reversed ? "reversed" : "not reversed"}");
     } catch (e) {
-      print("Failed to update direction in Realtime DB: $e");
+      print("Failed to update direction: $e");
+    }
+  }
+
+  Future<void> _resetSession() async {
+    try {
+      final snapshot = await lapsRef.get();
+      if (snapshot.exists) {
+        final map = Map<String, dynamic>.from(snapshot.value as Map);
+        for (var key in map.keys) {
+          if (key != 'direction' && key != 'status') {
+            await lapsRef.child(key).remove();
+          }
+        }
+      }
+
+      await lapsRef.child('status').set('not_over');
+      setState(() {
+        _hasUpdatedFirestore = false;
+        practiceStatus = "Not started";
+        _sessionState = "not_over";
+      });
+
+      print("Session reset successfully.");
+    } catch (e) {
+      print("Failed to reset session: $e");
     }
   }
 
@@ -88,6 +118,13 @@ class _LivePracticePageState extends State<LivePracticePage> {
       appBar: AppBar(
         title: const Text('Live Practice'),
         backgroundColor: blueColor,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: _resetSession,
+            tooltip: "Reset Session",
+          ),
+        ],
       ),
       body: Padding(
         padding: const EdgeInsets.all(12),
@@ -102,20 +139,15 @@ class _LivePracticePageState extends State<LivePracticePage> {
               ),
             ),
             const SizedBox(height: 12),
-
-            // New: Direction switch
             SwitchListTile(
               title: const Text('Reverse Direction'),
               value: _isDirectionReversed,
               activeColor: blueColor,
-              onChanged: (bool value) {
-                setState(() {
-                  _isDirectionReversed = value;
-                });
+              onChanged: (value) {
+                setState(() => _isDirectionReversed = value);
                 _updateDirectionInRealtimeDB(value);
               },
             ),
-
             Expanded(
               child: StreamBuilder<DatabaseEvent>(
                 stream: lapsRef.onValue,
@@ -129,39 +161,53 @@ class _LivePracticePageState extends State<LivePracticePage> {
                     lapsMap = Map<String, dynamic>.from(snapshot.data!.snapshot.value as Map);
                   }
 
-                  // Create a map of lapNumber -> data
+                  // Update session status from DB
+                  final sessionStatusRaw = lapsMap['status']?.toString();
+                  if (sessionStatusRaw != null && sessionStatusRaw != _sessionState) {
+                    _sessionState = sessionStatusRaw;
+                  }
+
                   Map<int, Map<String, dynamic>> structuredLaps = {};
                   for (var entry in lapsMap.entries) {
-                    // Skip the 'direction' key, which is a string, not a lap map
-                    if (entry.key == 'direction') continue;
-
+                    if (entry.key == 'direction' || entry.key == 'status') continue;
                     final lapData = Map<String, dynamic>.from(entry.value);
                     structuredLaps[lapData['lapNumber']] = lapData;
                   }
 
-                  // Determine currentLap and session status
                   int lastAvailableLap = structuredLaps.keys.isNotEmpty
                       ? structuredLaps.keys.reduce((a, b) => a > b ? a : b)
                       : 0;
 
-                  String currentStatus;
-                  if (lastAvailableLap == 0) {
-                    currentStatus = "Not started";
-                    _hasUpdatedFirestore = false; // reset flag if new session
-                  } else if (lastAvailableLap < widget.lapCount) {
-                    currentStatus = "Running (Lap $lastAvailableLap)";
-                    _hasUpdatedFirestore = false; // reset flag while running
-                  } else {
+                  String currentStatus = "Not started";
+
+                  if (_sessionState == "over") {
                     currentStatus = "Session Over";
 
-                    // Update Firestore laps once when session ends
                     if (!_hasUpdatedFirestore) {
                       _hasUpdatedFirestore = true;
-                      _updateLapsInFirestore(structuredLaps);
+
+                      _updateLapsInFirestore(structuredLaps).then((_) async {
+                        // Clear lap data but keep 'direction' and 'status'
+                        for (var key in lapsMap.keys) {
+                          if (key != 'direction' && key != 'status') {
+                            await lapsRef.child(key).remove();
+                          }
+                        }
+                        print("Lap data cleared after session over.");
+                      });
                     }
+                  } else if (lastAvailableLap == 0) {
+                    currentStatus = "Not started";
+                    _hasUpdatedFirestore = false;
+                  } else if (lastAvailableLap < widget.lapCount) {
+                    currentStatus = "Running (Lap $lastAvailableLap)";
+                    _hasUpdatedFirestore = false;
+                  } else if (lastAvailableLap >= widget.lapCount) {
+                    // Trigger session over update
+                    currentStatus = "Completing...";
+                    lapsRef.child('status').set('over');
                   }
 
-                  // Update state only if changed (to avoid build loop)
                   if (practiceStatus != currentStatus) {
                     WidgetsBinding.instance.addPostFrameCallback((_) {
                       if (mounted) {
@@ -172,7 +218,7 @@ class _LivePracticePageState extends State<LivePracticePage> {
                     });
                   }
 
-                  // Build full list of lap cards (some may be missing)
+                  // Build lap cards
                   List<Widget> lapCards = [];
                   for (int i = 1; i <= widget.lapCount; i++) {
                     final lap = structuredLaps[i];
@@ -189,10 +235,7 @@ class _LivePracticePageState extends State<LivePracticePage> {
                             backgroundColor: lap != null
                                 ? (isCurrentLap ? blueColor : Colors.grey)
                                 : Colors.grey.shade400,
-                            child: Text(
-                              '$i',
-                              style: const TextStyle(color: Colors.white),
-                            ),
+                            child: Text('$i', style: const TextStyle(color: Colors.white)),
                           ),
                           title: lap != null
                               ? Text('Time: ${lap['time']} sec')

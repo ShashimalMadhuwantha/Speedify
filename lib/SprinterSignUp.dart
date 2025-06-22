@@ -177,6 +177,7 @@ class _SprinterSignUpState extends State<SprinterSignUp> {
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: blueColor,
+                            foregroundColor: white,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(15),
                             ),

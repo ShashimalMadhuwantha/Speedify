@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'login.dart';
 
 class SprinterDrawer extends StatelessWidget {
   final String selected;
@@ -74,9 +75,14 @@ class SprinterDrawer extends StatelessWidget {
               leading: Icon(Icons.logout, color: Colors.red),
               title: Text('Logout', style: TextStyle(color: Colors.red)),
               onTap: () {
-                Navigator.pop(context);
-                Navigator.pop(context); // return to login
-              },
+                  Navigator.pop(context); // Close drawer first
+                  Navigator.pushAndRemoveUntil(
+                    context,
+                    MaterialPageRoute(builder: (context) => SprinterLogin()),
+                    (route) => false, // Remove all previous routes
+                  );
+                },
+
             ),
           ],
         ),

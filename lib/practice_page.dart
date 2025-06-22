@@ -1,6 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'live_practice_page.dart'; // Import the live display page
+import 'live_practice_page.dart';
 
 class PracticePage extends StatefulWidget {
   final String userId;
@@ -13,16 +13,16 @@ class PracticePage extends StatefulWidget {
 
 class _PracticePageState extends State<PracticePage> {
   final _formKey = GlobalKey<FormState>();
-  final TextEditingController _lapDistanceController = TextEditingController();
   final TextEditingController _lapCountController = TextEditingController();
 
   bool _loading = false;
   String _error = '';
+  double? _selectedLapDistance;
 
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   Future<void> _savePractice() async {
-    if (!_formKey.currentState!.validate()) return;
+    if (!_formKey.currentState!.validate() || _selectedLapDistance == null) return;
 
     setState(() {
       _loading = true;
@@ -30,7 +30,6 @@ class _PracticePageState extends State<PracticePage> {
     });
 
     try {
-      double lapDistance = double.parse(_lapDistanceController.text.trim());
       int lapCount = int.parse(_lapCountController.text.trim());
 
       DocumentReference practiceRef = await _firestore
@@ -38,7 +37,7 @@ class _PracticePageState extends State<PracticePage> {
           .doc(widget.userId)
           .collection('practices')
           .add({
-        'lapDistance': lapDistance,
+        'lapDistance': _selectedLapDistance,
         'lapCount': lapCount,
         'timestamp': FieldValue.serverTimestamp(),
       });
@@ -51,20 +50,21 @@ class _PracticePageState extends State<PracticePage> {
         });
       }
 
-      // Navigate to live practice page
       Navigator.push(
         context,
         MaterialPageRoute(
           builder: (context) => LivePracticePage(
             userId: widget.userId,
             practiceId: practiceRef.id,
-              lapCount: lapCount,
+            lapCount: lapCount,
           ),
         ),
       );
 
-      _lapDistanceController.clear();
       _lapCountController.clear();
+      setState(() {
+        _selectedLapDistance = null;
+      });
     } catch (e) {
       setState(() {
         _error = 'Failed to save practice: ${e.toString()}';
@@ -78,7 +78,6 @@ class _PracticePageState extends State<PracticePage> {
 
   @override
   void dispose() {
-    _lapDistanceController.dispose();
     _lapCountController.dispose();
     super.dispose();
   }
@@ -86,89 +85,115 @@ class _PracticePageState extends State<PracticePage> {
   @override
   Widget build(BuildContext context) {
     final blueColor = Color(0xFF1565C0);
+    final List<double> lapDistances = [100, 200, 500, 1000];
 
     return Scaffold(
       backgroundColor: Colors.white,
-      body: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              SizedBox(height: 20),
-              Text(
-                'New Practice',
-                style: TextStyle(
-                  fontSize: 26,
-                  fontWeight: FontWeight.bold,
-                  color: blueColor,
-                ),
-              ),
-              SizedBox(height: 20),
-              if (_error.isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
-                  child: Text(
-                    _error,
-                    style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+          child: Form(
+            key: _formKey,
+            child: ListView(
+              children: [
+                Text(
+                  'New Practice',
+                  style: TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    color: blueColor,
                   ),
                 ),
-              TextFormField(
-                controller: _lapDistanceController,
-                keyboardType: TextInputType.numberWithOptions(decimal: true),
-                decoration: InputDecoration(
-                  labelText: 'Lap Distance (meters)',
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                SizedBox(height: 25),
+
+                if (_error.isNotEmpty)
+                  Container(
+                    padding: EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.red.shade100,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      _error,
+                      style: TextStyle(color: Colors.red[900], fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                SizedBox(height: 15),
+
+                // Lap Distance Dropdown
+                Text(
+                  'Lap Distance (meters)',
+                  style: TextStyle(fontWeight: FontWeight.bold),
                 ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) return 'Please enter lap distance';
-                  final number = double.tryParse(value);
-                  if (number == null || number <= 0) return 'Enter a valid positive number';
-                  return null;
-                },
-              ),
-              SizedBox(height: 20),
-              TextFormField(
-                controller: _lapCountController,
-                keyboardType: TextInputType.number,
-                decoration: InputDecoration(
-                  labelText: 'Lap Count',
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                SizedBox(height: 8),
+                Container(
+                  padding: EdgeInsets.symmetric(horizontal: 16),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.grey.shade400),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: DropdownButtonFormField<double>(
+                    value: _selectedLapDistance,
+                    decoration: InputDecoration(border: InputBorder.none),
+                    isExpanded: true,
+                    hint: Text('Select lap distance'),
+                    items: lapDistances.map((value) {
+                      return DropdownMenuItem<double>(
+                        value: value,
+                        child: Text('${value.toInt()} meters'),
+                      );
+                    }).toList(),
+                    onChanged: (value) {
+                      setState(() {
+                        _selectedLapDistance = value;
+                      });
+                    },
+                    validator: (value) =>
+                        value == null ? 'Please select a lap distance' : null,
+                  ),
                 ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) return 'Please enter lap count';
-                  final number = int.tryParse(value);
-                  if (number == null || number <= 0) return 'Enter a valid positive integer';
-                  return null;
-                },
-              ),
-              SizedBox(height: 30),
-              _loading
-                  ? Center(
-                      child: CircularProgressIndicator(
-                        valueColor: AlwaysStoppedAnimation(blueColor),
-                      ),
-                    )
-                  : SizedBox(
-                      width: double.infinity,
-                      height: 50,
-                      child: ElevatedButton(
+
+                SizedBox(height: 20),
+
+                // Lap Count Field
+                TextFormField(
+                  controller: _lapCountController,
+                  keyboardType: TextInputType.number,
+                  decoration: InputDecoration(
+                    labelText: 'Lap Count',
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    filled: true,
+                    fillColor: Colors.grey.shade100,
+                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) return 'Please enter lap count';
+                    final number = int.tryParse(value);
+                    if (number == null || number <= 0) return 'Enter a valid positive integer';
+                    return null;
+                  },
+                ),
+                SizedBox(height: 35),
+
+                // Save Button
+                _loading
+                    ? Center(child: CircularProgressIndicator(valueColor: AlwaysStoppedAnimation(blueColor)))
+                    : ElevatedButton(
                         onPressed: _savePractice,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: blueColor,
+                          padding: EdgeInsets.symmetric(vertical: 16),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(15),
                           ),
-                          elevation: 5,
+                          elevation: 6,
                         ),
                         child: Text(
-                          'Save Practice',
-                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                          'Start Practice',
+                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
                         ),
                       ),
-                    ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

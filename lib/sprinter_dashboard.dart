@@ -87,6 +87,7 @@ class _SprinterDashboardState extends State<SprinterDashboard> {
       appBar: AppBar(
         title: const Text('Speedify', style: TextStyle(fontWeight: FontWeight.bold)),
         backgroundColor: blueColor,
+        foregroundColor: Colors.white,
         elevation: 4,
       ),
       drawer: SprinterDrawer(

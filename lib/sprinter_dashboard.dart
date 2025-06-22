@@ -19,8 +19,6 @@ class _SprinterDashboardState extends State<SprinterDashboard> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   late Future<DocumentSnapshot> _sprinterFuture;
   String _selectedPage = 'Dashboard';
-
-  // Practice summary future
   late Future<Map<String, dynamic>> _practiceSummaryFuture;
 
   @override
@@ -64,14 +62,13 @@ class _SprinterDashboardState extends State<SprinterDashboard> {
       'totalSessions': totalSessions,
       'totalLaps': totalLaps,
       'averageLapDistance': averageLapDistance,
-      'latestPracticeDate': latestTimestamp != null ? latestTimestamp.toDate() : null,
+      'latestPracticeDate': latestTimestamp?.toDate(),
     };
   }
 
   void _onDrawerSelection(String page) {
     setState(() {
       _selectedPage = page;
-      // Refresh practice summary when returning to dashboard
       if (page == 'Dashboard') {
         _practiceSummaryFuture = _fetchPracticeSummary();
       }
@@ -151,181 +148,134 @@ class _SprinterDashboardState extends State<SprinterDashboard> {
           end: Alignment.bottomCenter,
         ),
       ),
-      padding: EdgeInsets.symmetric(horizontal: 20, vertical: 30),
       child: SingleChildScrollView(
-        child: Card(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-          elevation: 12,
-          shadowColor: blueColor.withOpacity(0.3),
-          child: Padding(
-            padding: EdgeInsets.all(32),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                CircleAvatar(
-                  radius: 60,
-                  backgroundColor: blueColor,
-                  child: Icon(Icons.directions_run, size: 70, color: Colors.white),
-                ),
-                SizedBox(height: 28),
-                Text(
-                  data['name'] ?? 'No Name',
-                  style: TextStyle(
-                    fontSize: 32,
-                    fontWeight: FontWeight.w700,
-                    color: blueColor,
-                    letterSpacing: 1.1,
-                  ),
-                ),
-                SizedBox(height: 8),
-                Text(
-                  data['email'] ?? 'No Email',
-                  style: TextStyle(
-                    fontSize: 18,
-                    color: blueColor.withOpacity(0.75),
-                    letterSpacing: 0.5,
-                  ),
-                ),
-                SizedBox(height: 24),
-                Divider(thickness: 1.5, color: blueColor.withOpacity(0.3)),
-                SizedBox(height: 24),
-
-                // Summary section
-                _buildSummaryCard(totalSessions, totalLaps, averageLapDistance, latestPracticeDate, blueColor),
-
-                SizedBox(height: 24),
-
-                Text(
-                  'Welcome back, ready to speed up your training?',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w500,
-                    color: blueColor,
-                  ),
-                ),
-                SizedBox(height: 16),
-                ElevatedButton.icon(
-                  onPressed: () {
-                    setState(() {
-                      _selectedPage = 'New Practice';
-                    });
-                  },
-                  icon: Icon(Icons.play_arrow),
-                  label: Text('Start New Practice'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: blueColor,
-                    padding: EdgeInsets.symmetric(horizontal: 30, vertical: 14),
-                    textStyle: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    elevation: 6,
-                  ),
-                ),
-                SizedBox(height: 16),
-                ElevatedButton.icon(
-                  onPressed: () {
-                    setState(() {
-                      _selectedPage = 'Practice History';
-                    });
-                  },
-                  icon: Icon(Icons.history),
-                  label: Text('View Practice History'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: blueColor.withOpacity(0.85),
-                    padding: EdgeInsets.symmetric(horizontal: 30, vertical: 14),
-                    textStyle: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    elevation: 4,
-                  ),
-                ),
-                SizedBox(height: 12),
-                ElevatedButton.icon(
-                  onPressed: () {
-                    setState(() {
-                      _selectedPage = 'Practice Modes';
-                    });
-                  },
-                  icon: Icon(Icons.speed),
-                  label: Text('Practice Modes'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: blueColor.withOpacity(0.75),
-                    padding: EdgeInsets.symmetric(horizontal: 30, vertical: 14),
-                    textStyle: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    elevation: 4,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSummaryCard(int totalSessions, int totalLaps, double avgLapDistance, DateTime? latestPracticeDate, Color blueColor) {
-    return Card(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      elevation: 6,
-      color: blueColor.withOpacity(0.1),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 28),
         child: Column(
           children: [
-            Text(
-              'Practice Summary',
-              style: TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-                color: blueColor,
+            // Hero image with sprinting athlete
+            ClipRRect(
+              borderRadius: BorderRadius.vertical(bottom: Radius.circular(24)),
+              child: Image.network(
+                'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?auto=format&fit=crop&w=1050&q=80',
+                height: 220,
+                width: double.infinity,
+                fit: BoxFit.cover,
               ),
             ),
-            SizedBox(height: 18),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                _summaryItem('Total Sessions', totalSessions.toString(), blueColor),
-                _summaryItem('Total Laps', totalLaps.toString(), blueColor),
-              ],
+            SizedBox(height: 20),
+            CircleAvatar(
+              radius: 52,
+              backgroundImage: NetworkImage(
+                'https://cdn-icons-png.flaticon.com/512/2922/2922510.png',
+              ),
+              backgroundColor: blueColor.withOpacity(0.1),
             ),
             SizedBox(height: 16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
+            Text(
+              data['name'] ?? 'No Name',
+              style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: blueColor),
+            ),
+            SizedBox(height: 6),
+            Text(
+              data['email'] ?? 'No Email',
+              style: TextStyle(fontSize: 16, color: blueColor.withOpacity(0.7)),
+            ),
+            SizedBox(height: 24),
+            _buildSummaryCard(totalSessions, totalLaps, averageLapDistance, latestPracticeDate, blueColor),
+            SizedBox(height: 32),
+            Text(
+              'Ready to break your limits today?',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.w500, color: blueColor),
+            ),
+            SizedBox(height: 20),
+            Wrap(
+              spacing: 16,
+              runSpacing: 12,
+              alignment: WrapAlignment.center,
               children: [
-                _summaryItem('Avg Lap Distance', '${avgLapDistance.toStringAsFixed(2)} m', blueColor),
-                _summaryItem(
-                  'Last Practice',
-                  latestPracticeDate != null ? '${latestPracticeDate.day}/${latestPracticeDate.month}/${latestPracticeDate.year}' : 'N/A',
-                  blueColor,
-                ),
+                _buildActionButton(Icons.play_arrow, 'Start Practice', () {
+                  setState(() => _selectedPage = 'New Practice');
+                }, blueColor),
+                _buildActionButton(Icons.history, 'Practice History', () {
+                  setState(() => _selectedPage = 'Practice History');
+                }, blueColor.withOpacity(0.9)),
+                _buildActionButton(Icons.speed, 'Practice Modes', () {
+                  setState(() => _selectedPage = 'Practice Modes');
+                }, blueColor.withOpacity(0.8)),
               ],
             ),
+            SizedBox(height: 40),
           ],
         ),
       ),
     );
   }
 
-  Widget _summaryItem(String label, String value, Color blueColor) {
+  Widget _buildSummaryCard(int totalSessions, int totalLaps, double avgLapDistance, DateTime? latestPracticeDate, Color blueColor) {
+    final TextStyle labelStyle = TextStyle(color: blueColor.withOpacity(0.7), fontSize: 14);
+    final TextStyle valueStyle = TextStyle(color: blueColor, fontSize: 20, fontWeight: FontWeight.w600);
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Card(
+        elevation: 6,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 18),
+          child: Column(
+            children: [
+              Text('Practice Summary', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: blueColor)),
+              SizedBox(height: 24),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  _buildSummaryItem(Icons.fitness_center, 'Sessions', totalSessions.toString(), blueColor),
+                  _buildSummaryItem(Icons.directions_run, 'Laps', totalLaps.toString(), blueColor),
+                ],
+              ),
+              SizedBox(height: 20),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  _buildSummaryItem(Icons.timeline, 'Avg Lap', '${avgLapDistance.toStringAsFixed(2)} m', blueColor),
+                  _buildSummaryItem(Icons.calendar_today, 'Last Practice',
+                      latestPracticeDate != null
+                          ? '${latestPracticeDate.day}/${latestPracticeDate.month}/${latestPracticeDate.year}'
+                          : 'N/A',
+                      blueColor),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSummaryItem(IconData icon, String label, String value, Color color) {
     return Column(
       children: [
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.w700,
-            color: blueColor,
-          ),
-        ),
-        SizedBox(height: 6),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 14,
-            color: blueColor.withOpacity(0.75),
-          ),
-        ),
+        Icon(icon, size: 32, color: color),
+        SizedBox(height: 8),
+        Text(value, style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: color)),
+        SizedBox(height: 4),
+        Text(label, style: TextStyle(fontSize: 14, color: color.withOpacity(0.7))),
       ],
+    );
+  }
+
+  Widget _buildActionButton(IconData icon, String label, VoidCallback onTap, Color bgColor) {
+    return ElevatedButton.icon(
+      onPressed: onTap,
+      icon: Icon(icon, size: 20),
+      label: Text(label),
+      style: ElevatedButton.styleFrom(
+        backgroundColor: bgColor,
+        padding: EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+        textStyle: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        elevation: 6,
+      ),
     );
   }
 }

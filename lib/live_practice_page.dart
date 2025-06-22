@@ -25,10 +25,23 @@ class _LivePracticePageState extends State<LivePracticePage> {
   String practiceStatus = "Not started";
   bool _hasUpdatedFirestore = false;  // flag to avoid repeated updates
 
+  // New: switch state for direction
+  bool _isDirectionReversed = false;
+
   @override
   void initState() {
     super.initState();
     lapsRef = FirebaseDatabase.instance.ref("laps");
+
+    // Listen once for initial direction value in realtime DB and set switch state
+    lapsRef.child('direction').get().then((snapshot) {
+      if (snapshot.exists) {
+        final val = snapshot.value.toString();
+        setState(() {
+          _isDirectionReversed = (val.toLowerCase() == "reversed");
+        });
+      }
+    });
   }
 
   Future<void> _updateLapsInFirestore(Map<int, Map<String, dynamic>> lapsData) async {
@@ -59,6 +72,16 @@ class _LivePracticePageState extends State<LivePracticePage> {
     }
   }
 
+  // New: Function to update direction in Realtime Database
+  Future<void> _updateDirectionInRealtimeDB(bool reversed) async {
+    try {
+      await lapsRef.child('direction').set(reversed ? "reversed" : "not reversed");
+      print("Direction updated to ${reversed ? "reversed" : "not reversed"} in Realtime DB.");
+    } catch (e) {
+      print("Failed to update direction in Realtime DB: $e");
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -79,6 +102,20 @@ class _LivePracticePageState extends State<LivePracticePage> {
               ),
             ),
             const SizedBox(height: 12),
+
+            // New: Direction switch
+            SwitchListTile(
+              title: const Text('Reverse Direction'),
+              value: _isDirectionReversed,
+              activeColor: blueColor,
+              onChanged: (bool value) {
+                setState(() {
+                  _isDirectionReversed = value;
+                });
+                _updateDirectionInRealtimeDB(value);
+              },
+            ),
+
             Expanded(
               child: StreamBuilder<DatabaseEvent>(
                 stream: lapsRef.onValue,
@@ -95,6 +132,9 @@ class _LivePracticePageState extends State<LivePracticePage> {
                   // Create a map of lapNumber -> data
                   Map<int, Map<String, dynamic>> structuredLaps = {};
                   for (var entry in lapsMap.entries) {
+                    // Skip the 'direction' key, which is a string, not a lap map
+                    if (entry.key == 'direction') continue;
+
                     final lapData = Map<String, dynamic>.from(entry.value);
                     structuredLaps[lapData['lapNumber']] = lapData;
                   }

@@ -1,6 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'live_practice_page.dart';
+import 'AdjustRowerPage.dart';
 
 class PracticePage extends StatefulWidget {
   final String userId;
@@ -32,6 +34,7 @@ class _PracticePageState extends State<PracticePage> {
     try {
       int lapCount = int.parse(_lapCountController.text.trim());
 
+      // Save to Firestore
       DocumentReference practiceRef = await _firestore
           .collection('users')
           .doc(widget.userId)
@@ -50,13 +53,21 @@ class _PracticePageState extends State<PracticePage> {
         });
       }
 
+      // Save raw data directly to Realtime Database root (overwrites all other data!)
+      final DatabaseReference realtimeDbRef = FirebaseDatabase.instance.ref();
+      await realtimeDbRef.set({
+        'distance': _selectedLapDistance,
+        'lapcount': lapCount,
+        'status': 'init',
+      });
+
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => LivePracticePage(
+          builder: (context) => Adjustrower(
             userId: widget.userId,
             practiceId: practiceRef.id,
-            lapCount: lapCount, // Pass lapDistance here
+            lapCount: lapCount,
           ),
         ),
       );
@@ -120,7 +131,6 @@ class _PracticePageState extends State<PracticePage> {
                   ),
                 SizedBox(height: 15),
 
-                // Lap Distance Dropdown
                 Text(
                   'Lap Distance (meters)',
                   style: TextStyle(fontWeight: FontWeight.bold),
@@ -155,7 +165,6 @@ class _PracticePageState extends State<PracticePage> {
 
                 SizedBox(height: 20),
 
-                // Lap Count Field
                 TextFormField(
                   controller: _lapCountController,
                   keyboardType: TextInputType.number,
@@ -174,9 +183,12 @@ class _PracticePageState extends State<PracticePage> {
                 ),
                 SizedBox(height: 35),
 
-                // Save Button
                 _loading
-                    ? Center(child: CircularProgressIndicator(valueColor: AlwaysStoppedAnimation(blueColor)))
+                    ? Center(
+                        child: CircularProgressIndicator(
+                          valueColor: AlwaysStoppedAnimation(blueColor),
+                        ),
+                      )
                     : ElevatedButton(
                         onPressed: _savePractice,
                         style: ElevatedButton.styleFrom(

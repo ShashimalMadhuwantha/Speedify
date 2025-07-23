@@ -18,11 +18,22 @@ class Adjustrower extends StatefulWidget {
   _AdjustrowerState createState() => _AdjustrowerState();
 }
 
-class _AdjustrowerState extends State<Adjustrower> {
-  final Color blueColor = Color(0xFF1565C0);
+class _AdjustrowerState extends State<Adjustrower> with SingleTickerProviderStateMixin {
+  final Color blueColor = const Color(0xFF1565C0);
   final DatabaseReference _dbRef = FirebaseDatabase.instance.ref();
 
   bool _isUpdating = false;
+  late AnimationController _controller;
+  late Animation<double> _fadeIn;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _controller = AnimationController(vsync: this, duration: const Duration(seconds: 1));
+    _fadeIn = CurvedAnimation(parent: _controller, curve: Curves.easeIn);
+    _controller.forward();
+  }
 
   Future<void> _setReadyStatusAndNavigate() async {
     setState(() {
@@ -53,61 +64,87 @@ class _AdjustrowerState extends State<Adjustrower> {
   }
 
   @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Adjustrower'),
-        backgroundColor: blueColor,
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              'Adjust the rower for you',
-              style: TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
-                color: blueColor,
-              ),
-            ),
-            const SizedBox(height: 24),
-            Center(
-              child: Image.network(
-                'https://cdn-icons-png.flaticon.com/512/889/889105.png',
-                width: 120,
-                height: 120,
-                color: blueColor.withOpacity(0.8),
-                colorBlendMode: BlendMode.modulate,
-              ),
-            ),
-            const SizedBox(height: 24),
-            Text(
-              'Get Ready!',
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.w600, color: Colors.grey[800]),
-            ),
-            const SizedBox(height: 32),
-
-            Center(
-              child: _isUpdating
-                  ? CircularProgressIndicator(color: blueColor)
-                  : ElevatedButton(
-                      onPressed: _setReadyStatusAndNavigate,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: blueColor,
-                        padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 16),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-                        elevation: 6,
-                      ),
-                      child: const Text(
-                        'Ready',
-                        style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
-                      ),
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Color(0xFFe3f2fd), Color(0xFFbbdefb)],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+        ),
+        child: SafeArea(
+          child: FadeTransition(
+            opacity: _fadeIn,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  const SizedBox(height: 30),
+                  Text(
+                    'Adjust the rower for you',
+                    style: TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                      color: blueColor,
+                      shadows: [
+                        Shadow(
+                          blurRadius: 4,
+                          color: Colors.black12,
+                          offset: Offset(2, 2),
+                        ),
+                      ],
                     ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 24),
+                  Image.network(
+                    'https://cdn-icons-png.flaticon.com/512/889/889105.png',
+                    width: 140,
+                    height: 140,
+                    color: blueColor.withOpacity(0.85),
+                    colorBlendMode: BlendMode.modulate,
+                  ),
+                  const SizedBox(height: 24),
+                  Text(
+                    'Get Ready!',
+                    style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.grey[800],
+                    ),
+                  ),
+                  const Spacer(),
+                  _isUpdating
+                      ? CircularProgressIndicator(color: blueColor)
+                      : ElevatedButton.icon(
+                          onPressed: _setReadyStatusAndNavigate,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: blueColor,
+                            padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 16),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                            elevation: 8,
+                            shadowColor: Colors.blueAccent,
+                          ),
+                          icon: const Icon(Icons.arrow_forward, color: Colors.white),
+                          label: const Text(
+                            'Start Practice',
+                            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
+                          ),
+                        ),
+                  const SizedBox(height: 40),
+                ],
+              ),
             ),
-          ],
+          ),
         ),
       ),
     );
